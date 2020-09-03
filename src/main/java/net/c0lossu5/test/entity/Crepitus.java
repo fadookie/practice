@@ -55,6 +55,7 @@ public class Crepitus extends EntityMob implements IAnimatedEntity {
 		isEntityAlive();
 		boolean walk = event.isWalking();
 		if (attacking && currentTick - attackStartTk < attackDurationTk) {
+				setAttacking(false);
 
 			
 			this.attackStartTk = currentTick;
