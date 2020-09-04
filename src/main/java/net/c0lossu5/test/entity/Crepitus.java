@@ -43,29 +43,21 @@ public class Crepitus extends EntityMob implements IAnimatedEntity {
 	private static final DataParameter<Boolean> ATTACKING = EntityDataManager.createKey(Crepitus.class, DataSerializers.BOOLEAN);
 	public EntityAnimationManager animationManager = new EntityAnimationManager();
 	private AnimationController controller = new EntityAnimationController(this, "walkController", 10, this::animationPredicate);
-	double attackStartTk;
-	final float attackDurationTk = 2 * 15 ;
 
 
 	private static final int NORMAL_ATTACK_DAMAGE = 9;
 
 	private <E extends Crepitus & IAnimatedEntity> boolean animationPredicate(AnimationTestEvent<E> event) {
 		final double currentTick = this.ticksExisted + event.getPartialTick();
-		boolean attacking = getAttacking();
-		isEntityAlive();
 		boolean walk = event.isWalking();
-		if (attacking && currentTick - attackStartTk < attackDurationTk) {
-				setAttacking(false);
-
-			
-			this.attackStartTk = currentTick;
-			System.out.println("attack Played");
+		if (getAttacking()) {
+//			System.out.println("attack Played");
 			controller.setAnimation(new AnimationBuilder().addAnimation("attack2"));
 			return true;
 		} else if (!isEntityAlive()) {
 			this.setHealth(0.0f);
 			{
-				System.out.println("death Played");
+//				System.out.println("death Played");
 				setAttacking(false);
 				controller.setAnimation(new AnimationBuilder().addAnimation("death1"));
 
@@ -76,7 +68,7 @@ public class Crepitus extends EntityMob implements IAnimatedEntity {
 			this.setHealth(0.0f);
 			{
 				if (isInWater()) {
-					System.out.println("death Played");
+//					System.out.println("death Played");
 					setAttacking(false);
 					controller.setAnimation(new AnimationBuilder().addAnimation("swimdeath"));
 				}
@@ -241,7 +233,8 @@ public class Crepitus extends EntityMob implements IAnimatedEntity {
 
 	class HuntingAttackGoal extends EntityAIAttackMelee {
 		protected final Crepitus attacker;
-		protected int attackTick;
+		protected int attackStartTk;
+		protected final float attackDurationTk = 1.5f * 20;
 		private final double speedTowardsTarget;
 		private final boolean longMemory;
 		Path path;
@@ -377,17 +370,19 @@ public class Crepitus extends EntityMob implements IAnimatedEntity {
 				}
 			}
 
-			this.attackTick = Math.max(this.attackTick - 1, 0);
 			this.checkAndPerformAttack(entitylivingbase, d0);
 		}
 
 		protected void checkAndPerformAttack(EntityLivingBase enemy, double distToEnemySqr) {
 			double d0 = this.getAttackReachSqr(enemy);
-			if (distToEnemySqr <= d0 && this.attackTick <= 0) {
-				this.attackTick = 20;
+			System.out.println("checkAndPerformAttack attacking:" + this.attacker.getAttacking() + " d0:" +d0 + " attackStartTk:" + this.attackStartTk + " attackElapsed:" + (this.attacker.ticksExisted - this.attackStartTk));
+			if (distToEnemySqr <= d0 && !this.attacker.getAttacking()) {
+				this.attackStartTk = this.attacker.ticksExisted;
+				System.out.println("checkAndPerformAttack set TRUE");
 				this.attacker.attackEntityAsMob(enemy);
 				this.attacker.setAttacking(true);
-			} else if (this.attackTick > 0){
+			} else if (this.attacker.getAttacking() && this.attacker.ticksExisted -  this.attackStartTk > this.attackDurationTk){
+				System.out.println("checkAndPerformAttack set FALSE");
 				this.attacker.setAttacking(false);
 			}
 		}
